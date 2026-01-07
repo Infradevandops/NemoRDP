@@ -23,3 +23,8 @@ frontend/build/
 
 # Docker
 postgres_data/
+
+# Cleanup / Excluded
+RDPSaaS/
+docs/RDP-MASTER-ROADMAP.md
+*.roadmap
