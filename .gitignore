@@ -1,0 +1,25 @@
+# General
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Python / Backend
+backend/__pycache__/
+backend/venv/
+backend/.env
+backend/.env.prod
+backend/*.db
+backend/.pytest_cache/
+backend/celerybeat-schedule
+
+# Node / Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env
+frontend/.env.local
+frontend/out/
+frontend/build/
+
+# Docker
+postgres_data/
