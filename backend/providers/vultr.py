@@ -12,23 +12,32 @@ class VultrProvider:
             "Content-Type": "application/json"
         }
 
-    async def create_windows_instance(self, order_id: str) -> Dict:
+    async def create_windows_instance(self, order_id: str, location: str = "US", plan: str = "basic") -> Dict:
+        """Create Windows Server 2022 RDP instance"""
+    async def create_windows_instance(self, order_id: str, location: str = "US", plan: str = "basic") -> Dict:
         """Create Windows Server 2022 RDP instance"""
         if not self.api_key:
-             # Mock for development if no key
-             print("VULTR_API_KEY not found. Returning mock instance.")
-             await asyncio.sleep(2)
-             return {
-                "provider_id": f"mock-vultr-{order_id}",
-                "ip_address": "192.168.1.100",
-                "username": "Administrator",
-                "password": "MockPassword123!",
-                "status": "active"
-            }
+             print("VULTR_API_KEY not found. Windows provisioning unavailable.")
+             raise Exception("Windows RDP provisioning is currently unavailable (Provider key missing).")
+
+        # Map generic locations to Vultr regions
+        region_map = {
+            "US": "ewr", # New Jersey
+            "EU": "fra", # Frankfurt
+            "ASIA": "sgp" # Singapore
+        }
+        vultr_region = region_map.get(location, "ewr")
+        
+        # Map plan to Vultr instance size
+        plan_map = {
+            "basic": "vc2-2c-4gb",   # 2 vCPU, 4GB RAM
+            "pro": "vc2-4c-8gb",     # 4 vCPU, 8GB RAM
+        }
+        vultr_plan = plan_map.get(plan, "vc2-2c-4gb")
 
         payload = {
-            "region": "ewr",  # New Jersey
-            "plan": "vc2-2c-4gb",  # 2 vCPU, 4GB RAM
+            "region": vultr_region,  # Dynamic Region
+            "plan": vultr_plan,  # Dynamic Plan Size
             "os_id": 477,  # Windows Server 2022 (Standard) - Check ID if changed
             "label": f"nemordp-{order_id}",
             "hostname": f"nemordp-{order_id}",

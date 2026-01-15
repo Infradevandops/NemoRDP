@@ -7,7 +7,7 @@ from backend.database.connection import SessionLocal
 from backend.services.email import EmailService # We'll create this next
 
 @shared_task(bind=True, max_retries=3)
-def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan: str, user_email: str):
+def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan: str, user_email: str, location: str = "US", duration_days: float = 30.0):
     """Background task to provision RDP instance"""
     db = SessionLocal()
     provisioning_service = ProvisioningService()
@@ -17,6 +17,10 @@ def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan
         # Convert string back to Enum
         os_type = OSType(os_type_str)
         
+        # Calculate expiry
+        from datetime import datetime, timedelta
+        expires_at = datetime.utcnow() + timedelta(days=duration_days)
+        
         # 1. Create Initial DB Record
         rdp_instance = RDPInstance(
             user_id=user_id,
@@ -24,7 +28,9 @@ def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan
             provider_id="pending",
             os_type=os_type_str,
             plan=plan,
-            status="provisioning"
+            location=location,
+            status="provisioning",
+            expires_at=expires_at
         )
         db.add(rdp_instance)
         db.commit()
@@ -35,7 +41,8 @@ def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan
         result = async_to_sync(provisioning_service.provision_rdp)(
             order_id, 
             os_type, 
-            plan
+            plan,
+            location
         )
         
         # 3. Update DB with Credentials

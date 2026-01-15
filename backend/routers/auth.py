@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from backend.models.user import User
 from backend.core import security
 from backend.core.config import settings
 from pydantic import BaseModel, EmailStr
+from backend.core.ratelimit import limiter
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -21,7 +22,8 @@ class Token(BaseModel):
     token_type: str
 
 @router.post("/register", response_model=Token)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, user_in: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(
@@ -44,7 +46,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     }
 
 @router.post("/login", response_model=Token)
-def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("10/minute")
+def login(request: Request, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(

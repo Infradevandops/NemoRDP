@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface AuthFormProps {
     type: 'login' | 'register'
@@ -10,6 +10,7 @@ interface AuthFormProps {
 
 export function AuthForm({ type }: AuthFormProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -27,15 +28,14 @@ export function AuthForm({ type }: AuthFormProps) {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
             const formData = new URLSearchParams()
-            formData.append('username', email) // OAuth2PasswordRequestForm expects username
-            formData.append('password', password)
+            formData.append('username', email.trim().toLowerCase()) // OAuth2PasswordRequestForm expects username
+            formData.append('password', password.trim())
 
             // Register endpoint expects JSON, Login expects Form Data (OAuth2 standard)
             let response
             if (type === 'login') {
                 response = await fetch(`${apiUrl}/auth/login`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData,
                 })
             } else {
@@ -49,14 +49,29 @@ export function AuthForm({ type }: AuthFormProps) {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.detail || 'Authentication failed')
+                let errorMessage = 'Authentication failed'
+                if (data.detail) {
+                    if (typeof data.detail === 'string') {
+                        errorMessage = data.detail
+                    } else if (Array.isArray(data.detail)) {
+                        errorMessage = data.detail.map((e: any) => e.msg).join(', ')
+                    } else {
+                        errorMessage = JSON.stringify(data.detail)
+                    }
+                }
+                throw new Error(errorMessage)
             }
 
             // Store token
             localStorage.setItem('token', data.access_token)
 
             // Redirect
-            router.push('/dashboard')
+            const plan = searchParams.get('plan')
+            if (plan) {
+                router.push(`/dashboard/deploy?plan=${plan}`)
+            } else {
+                router.push('/dashboard')
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
         } finally {

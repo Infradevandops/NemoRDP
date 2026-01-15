@@ -10,14 +10,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
+# Install python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install uvicorn
 
-COPY . .
+# Copy app code to /app/backend so imports work
+COPY . backend/
+
+# Set Python path so 'backend' is recognized as a module
+ENV PYTHONPATH=/app
 
 # Expose port
 EXPOSE 8000
 
 # Command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

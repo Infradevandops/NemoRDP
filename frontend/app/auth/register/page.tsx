@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { AuthForm } from '@/components/AuthForm'
 import Link from 'next/link'
 
@@ -20,7 +21,9 @@ export default function RegisterPage() {
             </div>
             <div className="lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-                    <AuthForm type="register" />
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <AuthForm type="register" />
+                    </Suspense>
                 </div>
             </div>
         </div>

@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nemordp_backend
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-nemordp}
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nemordp-network
+    volumes:
+      - ./backend:/app/backend  # Hot reload
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nemordp_worker
+    command: celery -A backend.core.celery_app worker --loglevel=info
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nemordp-network
+    volumes:
+      - ./backend:/app/backend
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nemordp_beat
+    command: celery -A backend.core.celery_app beat --loglevel=info
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nemordp-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nemordp_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    networks:
+      - nemordp-network
+    # For true dev mode with hot reload, we'd mount volumes and run 'npm run dev'
+    # But sticking to build for now to ensure we test what we deploy, as requested.
+    # To enable dev mode, I'd need to change command to 'npm run dev' and bind mount.
+    # Given "Start the app and send url to test", utilizing the build is arguably safer verification.
+
+  db:
+    image: postgres:15-alpine
+    container_name: nemordp_db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-nemordp}
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Expose for local tool inspection
+    networks:
+      - nemordp-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: nemordp_redis
+    networks:
+      - nemordp-network
+    ports:
+      - "6379:6379" # Expose for local tool inspection
+
+networks:
+  nemordp-network:
+    driver: bridge
+
+volumes:
+  postgres_data_local:

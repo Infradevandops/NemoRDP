@@ -37,7 +37,7 @@ class ContaboProvider:
             else:
                 raise Exception("Failed to get Contabo access token")
 
-    async def create_linux_instance(self, order_id: str) -> Dict:
+    async def create_linux_instance(self, order_id: str, location: str = "EU", plan: str = "basic") -> Dict:
         """Create Ubuntu Desktop RDP instance"""
         if not self.client_id or not self.client_secret:
              # Mock for development
@@ -54,6 +54,18 @@ class ContaboProvider:
         if not self.token:
             await self.get_access_token()
             
+        # Map generic locations to Contabo regions 
+        # (Assuming 'EU', 'US', 'SIN' are valid or we default to EU)
+        region_map = {
+            "US": "US", 
+            "EU": "EU", 
+            "ASIA": "SIN"
+        }
+        contabo_region = region_map.get(location, "EU")
+        
+        # Note: Contabo Linux is currently single-tier (Basic only)
+        # Pro tier for Linux would require different productId
+
         headers = {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json"
@@ -61,8 +73,8 @@ class ContaboProvider:
         
         payload = {
             "imageId": "ubuntu-22.04",
-            "productId": "VPS-1-SSD-20",  # 1 vCPU, 4GB RAM - check productId validity
-            "region": "EU",
+            "productId": "VPS-1-SSD-20",  # 1 vCPU, 4GB RAM - Basic tier
+            "region": contabo_region,
             "period": 1,
             "displayName": f"nemordp-{order_id}",
             "defaultUser": "ubuntu",

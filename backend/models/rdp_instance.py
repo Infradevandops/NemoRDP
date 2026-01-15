@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from backend.database.connection import Base
 from datetime import datetime
 
@@ -14,6 +15,9 @@ class RDPInstance(Base):
     password = Column(String, nullable=True)
     os_type = Column(String, nullable=False)  # 'windows' or 'linux'
     plan = Column(String, nullable=False)  # 'basic', 'performance'
+    location = Column(String, default="US") # 'US', 'EU', 'ASIA'
     status = Column(String, default="provisioning")
     created_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="rdp_instances")

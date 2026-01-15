@@ -13,15 +13,15 @@ class ProvisioningService:
         self.vultr = VultrProvider()
         self.contabo = ContaboProvider()
 
-    async def provision_rdp(self, order_id: str, os_type: OSType, plan: str) -> Dict:
+    async def provision_rdp(self, order_id: str, os_type: OSType, plan: str, location: str) -> Dict:
         """Route provisioning to appropriate provider"""
         try:
             if os_type == OSType.WINDOWS:
-                return await self.vultr.create_windows_instance(order_id)
+                return await self.vultr.create_windows_instance(order_id, location, plan)
             else:
-                return await self.contabo.create_linux_instance(order_id)
+                return await self.contabo.create_linux_instance(order_id, location, plan)
         except Exception as e:
-            # Log error and potentially retry with different provider
+            # Re-raise with clear message
             raise Exception(f"Provisioning failed: {str(e)}")
 
     async def terminate_rdp(self, provider: str, instance_id: str) -> bool:
