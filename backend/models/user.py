@@ -18,3 +18,4 @@ class User(Base):
     rdp_instances = relationship("RDPInstance", back_populates="user")
     tickets = relationship("Ticket", back_populates="user")
     payments = relationship("Payment", back_populates="user")
+    ssh_keys = relationship("SSHKey", back_populates="user")

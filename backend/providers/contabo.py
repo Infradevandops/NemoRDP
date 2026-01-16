@@ -1,7 +1,7 @@
 import httpx
 import base64
 import asyncio
-from typing import Dict
+from typing import Dict, List
 import os
 
 class ContaboProvider:
@@ -37,25 +37,14 @@ class ContaboProvider:
             else:
                 raise Exception("Failed to get Contabo access token")
 
-    async def create_linux_instance(self, order_id: str, location: str = "EU", plan: str = "basic") -> Dict:
-        """Create Ubuntu Desktop RDP instance"""
-        if not self.client_id or not self.client_secret:
-             # Mock for development
-             print("CONTABO_CLIENT credentials not found. Returning mock instance.")
-             await asyncio.sleep(2)
-             return {
-                "provider_id": f"mock-contabo-{order_id}",
-                "ip_address": "10.0.0.5",
-                "username": "ubuntu",
-                "password": "MockPassword123!",
-                "status": "active"
-            }
-
+    async def create_linux_instance(self, order_id: str, location: str = "EU", plan: str = "basic", image_id: str = "ubuntu-22.04", ssh_keys: List[int] = None) -> Dict:
+        """Create Linux Instance (Contabo)"""
+        if not self.client_id:
+             return {"id": "mock-contabo-id", "ip": "10.0.0.1"}
+             
         if not self.token:
-            await self.get_access_token()
-            
-        # Map generic locations to Contabo regions 
-        # (Assuming 'EU', 'US', 'SIN' are valid or we default to EU)
+             await self.get_access_token()
+        
         region_map = {
             "US": "US", 
             "EU": "EU", 
@@ -63,21 +52,22 @@ class ContaboProvider:
         }
         contabo_region = region_map.get(location, "EU")
         
-        # Note: Contabo Linux is currently single-tier (Basic only)
-        # Pro tier for Linux would require different productId
+        # Determine Product ID based on Plan
+        # This is a simplification; in production mapped to real Contabo Product IDs
+        product_id = "VPS-S-SSD" if plan == "basic" else "VPS-M-SSD"
 
         headers = {
             "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
+            "x-trace-id": order_id
         }
         
         payload = {
-            "imageId": "ubuntu-22.04",
-            "productId": "VPS-1-SSD-20",  # 1 vCPU, 4GB RAM - Basic tier
+            "imageId": image_id,
+            "productId": product_id,
             "region": contabo_region,
             "period": 1,
             "displayName": f"nemordp-{order_id}",
-            "defaultUser": "ubuntu",
+            "sshKeys": ssh_keys if ssh_keys else [], # Contabo requires list of IDs
             "userData": self._get_ubuntu_desktop_script()
         }
         
@@ -172,3 +162,75 @@ runcmd:
                  headers=headers
              )
              return response.status_code == 204
+
+    async def get_instance_vnc_url(self, instance_id: str) -> str:
+        """Get VNC URL for instance"""
+        if not self.client_id:
+             return "http://mock-vnc-url.com"
+             
+        if not self.token:
+             await self.get_access_token()
+
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+             "x-trace-id": "vnc-trace"
+        }
+        
+        # Contabo VNC API is a bit different, often requires specific permissions
+        # GET /compute/instances/{instanceId}/vnc
+        async with httpx.AsyncClient() as client:
+             response = await client.get(
+                 f"{self.base_url}/compute/instances/{instance_id}/vnc",
+                 headers=headers
+             )
+             if response.status_code == 200:
+                 # Contabo returns a clearer object usually
+                 return response.json()["data"][0]["url"] 
+             raise Exception(f"Failed to get VNC URL: {response.text}")
+
+    async def create_snapshot(self, instance_id: str, name: str = "") -> dict:
+        """Create snapshot (Contabo)"""
+        if not self.client_id:
+            return {"id": "mock-snap-c1", "status": "active"}
+            
+        if not self.token: await self.get_access_token()
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        async with httpx.AsyncClient() as client:
+            # POST /compute/instances/{instanceId}/snapshots
+            response = await client.post(
+                f"{self.base_url}/compute/instances/{instance_id}/snapshots",
+                headers=headers,
+                json={"name": name, "description": "Created via NemoRDP"}
+            )
+            response.raise_for_status()
+            # Contabo returns data wrapper
+            return response.json().get("data", [{}])[0]
+
+    async def list_snapshots(self, instance_id: str) -> list:
+        """List snapshots for instance"""
+        if not self.client_id: return []
+        if not self.token: await self.get_access_token()
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/compute/instances/{instance_id}/snapshots",
+                headers=headers
+            )
+            if response.status_code == 200:
+                return response.json().get("data", [])
+            return []
+
+    async def restore_snapshot(self, instance_id: str, snapshot_id: str) -> bool:
+        """Rollback snapshot"""
+        if not self.client_id: return True
+        if not self.token: await self.get_access_token()
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/compute/instances/{instance_id}/snapshots/{snapshot_id}/rollback",
+                headers=headers
+            )
+            return response.status_code == 202 or response.status_code == 200

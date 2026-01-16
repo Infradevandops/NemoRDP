@@ -14,8 +14,8 @@ class VultrProvider:
 
     async def create_windows_instance(self, order_id: str, location: str = "US", plan: str = "basic") -> Dict:
         """Create Windows Server 2022 RDP instance"""
-    async def create_windows_instance(self, order_id: str, location: str = "US", plan: str = "basic") -> Dict:
-        """Create Windows Server 2022 RDP instance"""
+    async def create_windows_instance(self, order_id: str, location: str = "US", plan: str = "basic", os_id: int = 477) -> Dict:
+        """Create Windows Server RDP instance"""
         if not self.api_key:
              print("VULTR_API_KEY not found. Windows provisioning unavailable.")
              raise Exception("Windows RDP provisioning is currently unavailable (Provider key missing).")
@@ -38,7 +38,7 @@ class VultrProvider:
         payload = {
             "region": vultr_region,  # Dynamic Region
             "plan": vultr_plan,  # Dynamic Plan Size
-            "os_id": 477,  # Windows Server 2022 (Standard) - Check ID if changed
+            "os_id": os_id,  # Dynamic OS ID (Default 477=Win2022)
             "label": f"nemordp-{order_id}",
             "hostname": f"nemordp-{order_id}",
             "enable_ipv6": False,
@@ -115,3 +115,47 @@ class VultrProvider:
                 headers=self.headers
             )
             return response.status_code == 204
+
+    async def create_snapshot(self, instance_id: str, description: str = "") -> dict:
+        """Create a snapshot of the instance"""
+        if not self.api_key:
+            return {"id": "mock-snap-1", "status": "pending"}
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/snapshots",
+                headers=self.headers,
+                json={"instance_id": instance_id, "description": description}
+            )
+            # Vultr returns snapshot object
+            if response.status_code != 201 and response.status_code != 200:
+                pass # error handling
+            
+            return response.json().get("snapshot", {})
+
+    async def list_snapshots(self, instance_id: str = None) -> list:
+        """List snapshots, optionally filtered by instance"""
+        if not self.api_key:
+            return []
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/snapshots",
+                headers=self.headers
+            )
+            if response.status_code == 200:
+                 return response.json().get("snapshots", [])
+            return []
+
+    async def restore_snapshot(self, instance_id: str, snapshot_id: str) -> bool:
+        """Restore instance from snapshot"""
+        if not self.api_key:
+            return True
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/instances/{instance_id}/restore",
+                headers=self.headers,
+                json={"snapshot_id": snapshot_id}
+            )
+            return response.status_code == 202

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from backend.database.connection import get_db
 from backend.models.rdp_instance import RDPInstance
 from backend.core.security import get_current_user
@@ -15,14 +15,14 @@ router = APIRouter(prefix="/instances", tags=["instances"])
 class RDPInstanceSchema(BaseModel):
     id: int
     provider_id: str
-    ip_address: str | None
-    username: str | None
-    password: str | None
+    ip_address: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
     os_type: str
     plan: str
     status: str
     created_at: datetime
-    expires_at: datetime | None
+    expires_at: Optional[datetime]
     
     class Config:
         from_attributes = True
@@ -54,6 +54,26 @@ async def reboot_instance(
          raise HTTPException(status_code=500, detail="Failed to reboot instance")
          
     return {"status": "rebooting"}
+
+@router.get("/{instance_id}/console")
+@limiter.limit("5/minute")
+async def get_console(
+    request: Request,
+    instance_id: int,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Get VNC Console URL"""
+    instance = db.query(RDPInstance).filter(RDPInstance.id == instance_id, RDPInstance.user_id == current_user.id).first()
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+        
+    service = ProvisioningService()
+    try:
+        url = await service.get_console_url(instance.provider, instance.provider_id)
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{instance_id}")
 @limiter.limit("2/minute")

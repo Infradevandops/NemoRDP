@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from backend.database.connection import get_db
 from backend.models.user import User
@@ -15,6 +16,8 @@ class PaymentInitiate(BaseModel):
     payment_method: str # 'paystack' or 'crypto'
     crypto_type: str = None # 'BTC', 'ETH', 'USDT' (required if method is crypto)
     os_type: str = "windows" # 'windows' or 'linux'
+    os_specific_id: str = None # Optional specific OS ID from catalog
+    ssh_key_ids: List[int] = [] # Optional SSH Keys
     location: str = "US" # 'US', 'EU', 'ASIA'
 
 from backend.tasks.provisioning import provision_rdp_task
@@ -113,7 +116,9 @@ async def initiate_payment(payment: PaymentInitiate, db: Session = Depends(get_d
                 plan=payment.plan,
                 user_email=current_user.email,
                 location=payment.location,
-                duration_days=duration_days
+                duration_days=duration_days,
+                os_specific_id=payment.os_specific_id,
+                ssh_key_ids=payment.ssh_key_ids
             )
         
         return {

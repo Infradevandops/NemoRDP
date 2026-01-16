@@ -7,7 +7,7 @@ from backend.database.connection import SessionLocal
 from backend.services.email import EmailService # We'll create this next
 
 @shared_task(bind=True, max_retries=3)
-def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan: str, user_email: str, location: str = "US", duration_days: float = 30.0):
+def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan: str, user_email: str, location: str = "US", duration_days: float = 30.0, os_specific_id: str = None, ssh_key_ids: list = None):
     """Background task to provision RDP instance"""
     db = SessionLocal()
     provisioning_service = ProvisioningService()
@@ -42,7 +42,9 @@ def provision_rdp_task(self, user_id: int, order_id: str, os_type_str: str, plan
             order_id, 
             os_type, 
             plan,
-            location
+            location,
+            os_specific_id,
+            ssh_key_ids
         )
         
         # 3. Update DB with Credentials

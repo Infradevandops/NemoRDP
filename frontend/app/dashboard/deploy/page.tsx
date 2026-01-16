@@ -48,6 +48,56 @@ function DeployContent() {
     const [cryptoType, setCryptoType] = useState('BTC')
     const [loading, setLoading] = useState(false)
 
+    // New State for OS Catalog
+    const [osOptions, setOsOptions] = useState<any[]>([])
+    const [selectedOsId, setSelectedOsId] = useState('')
+    const [loadingOptions, setLoadingOptions] = useState(false)
+
+    // SSH Key State
+    const [sshKeys, setSshKeys] = useState<any[]>([])
+    const [selectedSshKey, setSelectedSshKey] = useState('')
+
+    // Fetch OS Options when Type Changes
+    useEffect(() => {
+        const fetchOsOptions = async () => {
+            setLoadingOptions(true)
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                // Use public endpoint, no auth needed technically for options, but good practice
+                const res = await fetch(`${apiUrl}/options/os?type=${osType}`)
+                if (res.ok) {
+                    const data = await res.json()
+                    setOsOptions(data)
+                    if (data.length > 0) {
+                        setSelectedOsId(data[0].id)
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch OS options", e)
+            } finally {
+                setLoadingOptions(false)
+            }
+        }
+        fetchOsOptions()
+    }, [osType])
+
+    // Fetch SSH Keys
+    useEffect(() => {
+        const fetchSshKeys = async () => {
+            try {
+                const token = localStorage.getItem('token')
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const res = await fetch(`${apiUrl}/ssh-keys/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                if (res.ok) setSshKeys(await res.json())
+            } catch (e) {
+                console.error("Failed to fetch SSH keys", e)
+            }
+        }
+        fetchSshKeys()
+    }, [])
+
     const calculatePrice = () => {
         if (duration === 'hourly') {
             return (PLANS[plan].hourly * hours).toFixed(2)
@@ -78,6 +128,8 @@ function DeployContent() {
                     payment_method: paymentMethod,
                     crypto_type: paymentMethod === 'crypto' ? cryptoType : undefined,
                     os_type: osType,
+                    os_specific_id: selectedOsId,
+                    ssh_key_ids: selectedSshKey ? [parseInt(selectedSshKey)] : [],
                     location
                 })
             })
@@ -145,6 +197,49 @@ function DeployContent() {
                                 <p className="text-sm text-muted-foreground">High Performance, Cost Effective</p>
                             </div>
                         </div>
+
+                        {/* Granular OS Version Selection */}
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium mb-2">Select OS Version</label>
+                            <select
+                                value={selectedOsId}
+                                onChange={(e) => setSelectedOsId(e.target.value)}
+                                className="w-full px-3 py-2 border rounded-md"
+                                disabled={loadingOptions}
+                            >
+                                {loadingOptions ? (
+                                    <option>Loading options...</option>
+                                ) : osOptions.length > 0 ? (
+                                    osOptions.map((opt: any) => (
+                                        <option key={opt.id} value={opt.id}>
+                                            {opt.name}
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option>No options available</option>
+                                )}
+                            </select>
+                        </div>
+
+                        {/* SSH Key Selection (Linux Only) */}
+                        {osType === 'linux' && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium mb-2">SSH Key (Optional for Linux)</label>
+                                <select
+                                    value={selectedSshKey}
+                                    onChange={(e) => setSelectedSshKey(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-md"
+                                >
+                                    <option value="">No SSH Key (Password Only)</option>
+                                    {sshKeys.map((key: any) => (
+                                        <option key={key.id} value={key.id}>
+                                            {key.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-muted-foreground mt-1">Manage keys in Settings.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Plan Selection */}
@@ -287,7 +382,9 @@ function DeployContent() {
                         <div className="space-y-2 mb-4">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Plan:</span>
-                                <span className="font-medium">{osType === 'windows' ? 'Windows' : 'Linux'} - {PLANS[plan].name}</span>
+                                <span className="font-medium">
+                                    {osOptions.find((o: any) => o.id === selectedOsId)?.name || (osType === 'windows' ? 'Windows' : 'Linux')} - {PLANS[plan].name}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Duration:</span>

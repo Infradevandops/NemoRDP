@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from backend.routers import auth, billing, instances, webhooks, support, admin
 from backend.database.connection import engine, Base, get_db
 from backend.models.payment import Payment # Ensure table creation
+from backend.models.ssh_key import SSHKey # Ensure table creation
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -24,7 +25,12 @@ app.include_router(billing.router)
 app.include_router(instances.router)
 app.include_router(webhooks.router)
 app.include_router(support.router)
+app.include_router(support.router)
 app.include_router(admin.router)
+from backend.routers import options
+app.include_router(options.router)
+from backend.routers import ssh_keys
+app.include_router(ssh_keys.router)
 
 # Rate Limiting
 from slowapi import _rate_limit_exceeded_handler
