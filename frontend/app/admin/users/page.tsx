@@ -28,13 +28,38 @@ export default function AdminUsersPage() {
     const router = useRouter()
 
     // Fetch users securely
-    const { data: users, error, isLoading } = useSWR('/admin/users', fetcher, {
+    const { data: users, error, isLoading, mutate } = useSWR('/admin/users', fetcher, {
         onError: (err) => {
             if (err.message === 'Unauthorized') {
                 router.push('/dashboard')
             }
         }
     })
+
+    const toggleBan = async (userId: number, currentStatus: boolean) => {
+        const action = currentStatus ? 'ban' : 'unban'
+        if (!confirm(`Are you sure you want to ${action} this user?`)) return
+
+        try {
+            const token = localStorage.getItem('token')
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            const res = await fetch(`${apiUrl}/admin/users/${userId}/${action}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+
+            if (res.ok) {
+                // Optimistic update or refetch
+                mutate()
+                // Show success toast (add toast import if needed, assuming simple alert for now or silent refresh)
+            } else {
+                alert('Failed to update user status')
+            }
+        } catch (e) {
+            console.error(e)
+            alert('Error updating user')
+        }
+    }
 
     if (isLoading) return <div className="p-8">Loading users...</div>
     if (error) return <div className="p-8 text-red-500">Error loading users. Access Denied?</div>
@@ -75,7 +100,13 @@ export default function AdminUsersPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 align-middle">
-                                            <Button variant="ghost" size="sm">View Details</Button>
+                                            <Button
+                                                variant={user.is_active ? "destructive" : "default"}
+                                                size="sm"
+                                                onClick={() => toggleBan(user.id, user.is_active)}
+                                            >
+                                                {user.is_active ? 'Ban User' : 'Unban User'}
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}

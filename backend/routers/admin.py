@@ -51,3 +51,31 @@ async def get_all_users(
 ):
     # Limit to 50 for demo
     return db.query(User).limit(50).all()
+
+@router.patch("/users/{user_id}/ban")
+async def ban_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_active = False
+    db.commit()
+    return {"message": f"User {user.email} has been banned"}
+
+@router.patch("/users/{user_id}/unban")
+async def unban_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_active = True
+    db.commit()
+    return {"message": f"User {user.email} has been unbanned"}
