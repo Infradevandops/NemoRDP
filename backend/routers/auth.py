@@ -50,7 +50,7 @@ def register(request: Request, user_in: UserCreate, background_tasks: Background
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
+            user.id, expires_delta=access_token_expires, claims={"is_verified": user.is_verified, "email": user.email}
         ),
         "token_type": "bearer",
     }
@@ -68,7 +68,7 @@ def login(request: Request, db: Session = Depends(get_db), form_data: OAuth2Pass
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
+            user.id, expires_delta=access_token_expires, claims={"is_verified": user.is_verified, "email": user.email}
         ),
         "token_type": "bearer",
     }
@@ -106,6 +106,7 @@ def reset_password(request: Request, body: PasswordResetConfirm, db: Session = D
         
     user.hashed_password = security.get_password_hash(body.new_password)
     db.commit()
+    return {"message": "Password updated successfully"}
     
 @router.post("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
