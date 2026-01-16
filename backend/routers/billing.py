@@ -46,6 +46,12 @@ async def get_billing_history(db: Session = Depends(get_db), current_user: User 
 
 @router.post("/initiate")
 async def initiate_payment(payment: PaymentInitiate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=403, 
+            detail="Please verify your email address to deploy a server."
+        )
+
     order_id = str(uuid.uuid4())
     
     # Validate hourly purchase
