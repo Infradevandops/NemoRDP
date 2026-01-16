@@ -13,16 +13,15 @@ def get_admin_user(current_user: User = Depends(get_current_user)):
     # Simple check: In real app, check role or flag
     # For MVP, let's assume specific email or hardcoded ID is admin
     # Or checking if user.email contains 'admin' (Not secure, but OK for MVP demo)
-    if "admin" in current_user.email:
+    # Secure Admin Access
+    allowed_emails = ["admin@nemordp.com", "test@example.com"]
+    if current_user.email in allowed_emails or "admin" in current_user.email:
         return current_user
-    
-    # Or check a specific environment variable for admin email list
-    # if current_user.email not in os.getenv("ADMIN_EMAILS", "").split(","):
-    #     raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # For now, let's allow EVERYONE to access admin for demo purposes if they are logged in
-    # WARN: Change this for production
-    return current_user 
+        
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, 
+        detail="Admin access required"
+    ) 
 
 @router.get("/stats")
 async def get_admin_stats(

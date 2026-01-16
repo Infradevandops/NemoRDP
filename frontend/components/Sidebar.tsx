@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Server, CreditCard, Settings, LifeBuoy, Box } from 'lucide-react'
+import { LayoutDashboard, Server, CreditCard, Settings, LifeBuoy, Box, Shield } from 'lucide-react'
 
 export const sidebarItems = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -45,6 +45,23 @@ export function Sidebar() {
                                 </Link>
                             )
                         })}
+
+                        <div className="mt-4 mb-2 px-2">
+                            <div className="h-[1px] bg-gray-200 dark:bg-gray-800" />
+                        </div>
+
+                        <Link
+                            href="/admin"
+                            className={cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-red-600 text-muted-foreground",
+                                pathname.startsWith('/admin')
+                                    ? "bg-red-50 text-red-600"
+                                    : ""
+                            )}
+                        >
+                            <Shield className="h-4 w-4" />
+                            Admin Panel
+                        </Link>
                     </nav>
                 </div>
             </div>
