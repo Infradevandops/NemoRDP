@@ -113,6 +113,29 @@ class EmailService:
 </html>
         """
 
+    async def send_password_reset_email(self, to_email: str, token: str):
+        """Send password reset link"""
+        reset_link = f"http://localhost:3000/auth/reset-password?token={token}"
+        # In production use settings.FRONTEND_URL
+        
+        if not self.smtp_username:
+             print(f"SMTP Credentials missing. Mocking RESET email to {to_email}")
+             print(f"Reset Link: {reset_link}")
+             return
+
+        subject = "Reset Your NemoRDP Password"
+        template = f"""
+        <html>
+            <body>
+                <h1>Password Reset Request</h1>
+                <p>Click the link below to reset your password. This link expires in 15 minutes.</p>
+                <a href="{reset_link}" style="padding: 10px 20px; background: #3b82f6; color: white; border-radius: 5px; text-decoration: none;">Reset Password</a>
+                <p>If you did not request this, please ignore this email.</p>
+            </body>
+        </html>
+        """
+        await self._send_email(to_email, subject, template)
+
     async def _send_email(self, to_email: str, subject: str, html_content: str):
         """Send email via SMTP"""
         msg = MIMEMultipart('alternative')
@@ -133,3 +156,26 @@ class EmailService:
         except Exception as e:
             # Log error but don't fail the provisioning
             print(f"Email sending failed: {e}")
+
+    async def send_verification_email(self, to_email: str, token: str):
+        """Send email verification link"""
+        verify_link = f"http://localhost:3000/auth/verify?token={token}"
+        # In production use settings.FRONTEND_URL
+        
+        if not self.smtp_username:
+             print(f"SMTP Credentials missing. Mocking VERIFY email to {to_email}")
+             print(f"Verify Link: {verify_link}")
+             return
+
+        subject = "Verify Your NemoRDP Email"
+        template = f"""
+        <html>
+            <body>
+                <h1>Welcome to NemoRDP!</h1>
+                <p>Please click the link below to verify your email address.</p>
+                <a href="{verify_link}" style="padding: 10px 20px; background: #22c55e; color: white; border-radius: 5px; text-decoration: none;">Verify Email</a>
+                <p>This link expires in 24 hours.</p>
+            </body>
+        </html>
+        """
+        await self._send_email(to_email, subject, template)

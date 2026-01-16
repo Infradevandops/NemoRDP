@@ -22,6 +22,40 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def create_password_reset_token(email: str) -> str:
+    """Generate a short-lived token specifically for password reset"""
+    expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode = {"exp": expire, "sub": email, "type": "reset"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    """Verify reset token and return email"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "reset":
+            return None
+        return payload.get("sub")
+    except JWTError:
+        return None
+
+def create_verification_token(email: str) -> str:
+    """Generate a token for email verification (24h expiry)"""
+    expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode = {"exp": expire, "sub": email, "type": "verify"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def verify_email_token(token: str) -> Optional[str]:
+    """Verify verification token and return email"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "verify":
+            return None
+        return payload.get("sub")
+    except JWTError:
+        return None
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 

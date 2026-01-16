@@ -21,13 +21,15 @@ def create_test_user():
         if existing_user:
             print(f"User {email} already exists. Updating password...")
             existing_user.hashed_password = get_password_hash(password)
+            existing_user.is_verified = True # Ensure verified
             db.commit()
             print("Password updated successfully.")
         else:
             new_user = User(
                 email=email,
                 hashed_password=get_password_hash(password),
-                is_active=True
+                is_active=True,
+                is_verified=True # Ensure verified
             )
             db.add(new_user)
             db.commit()

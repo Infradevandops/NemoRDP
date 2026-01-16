@@ -142,6 +142,13 @@ export function AuthForm({ type }: AuthFormProps) {
                         </button>
                     </div>
                 </form>
+                {type === 'login' && (
+                    <div className="text-center text-sm">
+                        <Link href="/auth/forgot-password" className="text-muted-foreground hover:text-primary underline-offset-4 hover:underline">
+                            Forgot your password?
+                        </Link>
+                    </div>
+                )}
             </div>
 
             <p className="px-8 text-center text-sm text-muted-foreground">
