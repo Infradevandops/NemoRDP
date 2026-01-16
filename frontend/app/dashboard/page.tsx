@@ -1,6 +1,14 @@
 'use client'
 
 import useSWR from 'swr'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Activity, CreditCard, DollarSign } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button' // Assumed path, will verify with list_dir
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConnectModal } from '@/components/ConnectModal'
+import { WelcomeTooltip } from '@/components/WelcomeTooltip'
 
 interface RDPInstance {
     id: number

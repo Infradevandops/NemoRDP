@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from backend.routers import auth, billing, instances, webhooks, support, admin
@@ -53,6 +53,12 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(RequestIDMiddleware)
+
+@app.on_event("startup")
+async def startup_event():
+    print("DEBUG: Routes:")
+    for route in app.routes:
+        print(f"DEBUG: {route.path} {route.methods}")
 
 @app.get("/")
 async def root():
