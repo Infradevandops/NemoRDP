@@ -1,93 +1,50 @@
-# NemoRDP
+# NemoRDP - API-Powered RDP Marketplace
 
-NemoRDP is a modern, SaaS-based Remote Desktop Protocol (RDP) provisioning platform. It allows users to purchase, manage, and connect to high-performance Windows and Linux RDP servers in seconds.
+**The High-Velocity, Zero-Maintenance RDP Standalone Seller.**
 
-## 🌟 Features
+NemoRDP is a specialized release of the RDP SaaS platform optimized for high-volume reselling. It utilizes a lean, API-driven runtime to provision virtual desktops instantly via global cloud providers.
 
-- **Instant Provisioning**: Automated deployment of Windows Server and Linux instances via Vultr/Contabo APIs.
-- **Flexible Billing**: Hourly, Weekly, and Monthly billing plans with dynamic pricing.
-- **Crypto & Card Payments**: Integrated Stripe/Paystack for cards and direct crypto wallet support.
-- **User Dashboard**:
-  - Real-time instance status and expiry countdown.
-  - "One-click" connection details.
-  - Extend subscriptions and manage power cycles (Reboot/Terminate).
-- **Secure Architecture**: Decoupled frontend/backend with robust JWT authentication.
+---
 
-## 🏗️ Architecture
+## 🚀 The Standalone Blueprint
 
-We employ a **Fig Strangler** inspired architecture (Decoupled, Service-Oriented):
-- **Frontend**: Next.js 14+ (React) with Tailwind CSS and Shadcn UI.
-- **Backend**: FastAPI (Python) for high-performance REST APIs.
-- **Async Workers**: Celery & Redis for handling long-running provisioning tasks.
-- **Database**: PostgreSQL for reliable relational data persistence.
+NemoRDP is designed to operate as a standalone business unit using "Series One" infrastructure architecture:
 
-## 🚀 Getting Started
+1.  **API-First Provisioning**: Utilizes the "100 runtime" provider API keys for instant inventory.
+2.  **Zero CapEx**: No hardware to maintain. Scale instantly by increasing API quotas.
+3.  **Cross-Provider Compatibility**: Native support for **Vultr** (Windows/GPU) and **Contabo** (Linux).
+4.  **Instant Deployment**: From payment to desktop credentials in under 5 minutes.
 
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local frontend dev)
-- Python 3.11+ (for local backend dev)
+## 🛠️ Technology Stack
 
-### Quick Start (Docker)
+-   **Frontend**: Next.js 14 + Shadcn UI + Tailwind CSS
+-   **Backend**: FastAPI (Python)
+-   **Task Worker**: Celery + Redis
+-   **Database**: PostgreSQL
+-   **Integration**: Vultr API & Contabo API
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Infradevandops/NemoRDP.git
-   cd NemoRDP
-   ```
+## 📋 First Launch Requirements
 
-2. **Setup Environment**
-   ```bash
-   cp backend/.env.example backend/.env
-   # Edit .env with your API keys (Vultr, Paystack, etc.)
-   ```
+To launch NemoRDP as a standalone seller, configure the following:
 
-3. **Launch Stack**
-   ```bash
-   docker-compose up -d --build
-   ```
+-   **Runtime Keys**: Vultr API Key (with 100+ instance limit)
+-   **Payments**: Paystack Secret Key
+-   **Email**: SMTP Credentials (SendGrid/Mailgun)
+-   **Infrastructure**: A standard Ubuntu 22.04 VPS for the control plane
 
-4. **Access Application**
-   - Frontend: `http://localhost:3000`
-   - API Docs: `http://localhost:8000/docs`
+## 📈 Roadmap
 
-For detailed production deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+### Phase 1: Pure Reselling (Current)
+-   [x] Mock API Testing Mode
+-   [ ] Production API Integration
+-   [ ] Automated Expiry Management
+-   [ ] Hourly Usage Metering
 
-## 🧪 Testing
+### Phase 2: Optimization
+-   [ ] Multi-region redundancy
+-   [ ] Advanced Firewall Management
+-   [ ] Team seating/sharing
 
-### Frontend Tests
-We use **Jest** and **React Testing Library** for component and unit testing.
+---
 
-```bash
-cd frontend
-npm install
-npm test
-```
-
-### Backend Tests
-(Coming soon: Pytest suite)
-
-## 📂 Project Structure
-
-```
-NemoRDP/
-├── backend/            # FastAPI Application
-│   ├── routers/        # API Endpoints
-│   ├── models/         # SQLAlchemy Models
-│   ├── services/       # Business Logic (Provisioning, Billing)
-│   └── providers/      # Cloud Provider Integrations (Vultr, Contabo)
-├── frontend/           # Next.js Application
-│   ├── app/            # App Router Pages
-│   ├── components/     # Reusable UI Components
-│   └── lib/            # Utilities
-├── docs/               # Documentation
-└── docker-compose.yml  # Local Development Orchestration
-```
-
-## 🤝 Contributing
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+*Powered by the AtlanticRDP Series One Core Architecture.*
